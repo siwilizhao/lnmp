@@ -1,0 +1,85 @@
+version: "3"
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: siwi-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /home/siwi/volumes/code/www/:/var/www/html/:rw
+      - /home/siwi/volumes/config/nginx/conf.d/:/etc/nginx/conf.d/:ro
+      - /home/siwi/volumes/config/nginx/default.conf:/etc/nginx/nginx.conf:ro
+      - /home/siwi/volumes/logs/siwi/:/var/log/siwi/:rw
+    networks:
+      - siwi-network
+  php:
+    build: ./php72/
+    container_name: siwi-php72
+    expose:
+      - "9000"
+    volumes:
+      - /home/siwi/volumes/code/www/:/var/www/html/:rw
+      - /home/siwi/volumes/config/php/7.2/php.ini:/usr/local/etc/php/php.ini:ro
+      - /home/siwi/volumes/config/php/7.2/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf:rw
+      - /home/siwi/volumes/logs/siwi/:/var/log/siwi/:rw
+    networks:
+      - siwi-network
+  mysql:
+    #restart: always
+    image: mysql
+    container_name: siwi-mysql
+    volumes: 
+      - /home/siwi/volumes/config/mysql/conf.d/mysql.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+      - /home/siwi/volumes/storage/mysql/:/var/lib/mysql/:rw
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    networks:
+      - siwi-network
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    ports:
+      - "8080:80"
+    networks:
+      - siwi-network
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+  redis:
+    #restart: always
+    image: redis
+    command: --save 900 1
+    container_name: siwi-redis
+    ports:
+      - 6379:6379
+    volumes:
+      - /home/siwi/volumes/storage/redis/data/:/data/:rw
+    networks:
+      - siwi-network
+  phpredisadmin:
+    image: erikdubbelboer/phpredisadmin:latest
+    container_name: phpredisadmin
+    ports:
+      - "8081:80"
+    networks:
+      - siwi-network
+    environment:
+      - REDIS_1_HOST=redis
+      - REDIS_1_PORT=6379
+  mongo:
+    #restart: always
+    image: mongo
+    #command: --auth
+    container_name: siwi-mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - /home/siwi/volumes/storage/mongodb/data/db/:/data/db:rw
+      - /home/siwi/volumes/storage/mongodb/data/configdb/:/data/configdb:rw
+    networks:
+      - siwi-network
+networks:
+  siwi-network:
