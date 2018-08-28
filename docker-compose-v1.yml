@@ -38,6 +38,16 @@ services:
       MYSQL_ROOT_PASSWORD: 123456
     networks:
       - siwi-network
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: phpmyadmin
+    ports:
+      - "8080:80"
+    networks:
+      - siwi-network
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
   redis:
     #restart: always
     image: redis
@@ -49,6 +59,16 @@ services:
       - /home/siwi/volumes/storage/redis/data/:/data/:rw
     networks:
       - siwi-network
+  phpredisadmin:
+    image: erikdubbelboer/phpredisadmin:latest
+    container_name: phpredisadmin
+    ports:
+      - "8081:80"
+    networks:
+      - siwi-network
+    environment:
+      - REDIS_1_HOST=redis
+      - REDIS_1_PORT=6379
   mongo:
     #restart: always
     image: mongo
