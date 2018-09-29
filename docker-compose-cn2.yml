@@ -1,0 +1,65 @@
+version: "3"
+services:
+  nginx:
+    image: nginx:alpine
+    container_name: deploy-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /home/deploy/volumes/code/www/:/var/www/html/:rw
+      - /home/deploy/volumes/config/nginx/conf.d/:/etc/nginx/conf.d/:ro
+      - /home/deploy/volumes/config/nginx/default.conf:/etc/nginx/nginx.conf:ro
+      - /home/deploy/volumes/logs/deploy/:/var/log/deploy/:rw
+    networks:
+      - deploy-network
+  php:
+    build: ./php72/
+    container_name: deploy-php72
+    expose:
+      - "9000"
+    volumes:
+      - /home/deploy/volumes/code/www/:/var/www/html/:rw
+      - /home/deploy/volumes/config/php/7.2/php.ini:/usr/local/etc/php/php.ini:ro
+      - /home/deploy/volumes/config/php/7.2/php-fpm.conf:/usr/local/etc/php-fpm.d/www.conf:rw
+      - /home/deploy/volumes/logs/deploy/:/var/log/deploy/:rw
+    networks:
+      - deploy-network
+  mysql:
+    restart: always
+    image: mysql
+    container_name: deploy-mysql
+    volumes: 
+      - /home/deploy/volumes/config/mysql/conf.d/mysql.cnf:/etc/mysql/conf.d/mysql.cnf:ro
+      - /home/deploy/volumes/storage/mysql/:/var/lib/mysql/:rw
+    ports:
+      - 3306:3306
+    environment:
+      MYSQL_ROOT_PASSWORD: 123456
+    networks:
+      - deploy-network
+  redis:
+    restart: always
+    image: redis
+    command: --save 900 1
+    container_name: deploy-redis
+    ports:
+      - 6379:6379
+    volumes:
+      - /home/deploy/volumes/storage/redis/data/:/data/:rw
+    networks:
+      - deploy-network
+  mongo:
+    restart: always
+    image: mongo
+    command: --auth
+    container_name: deploy-mongo
+    ports:
+      - 27017:27017
+    volumes:
+      - /home/deploy/volumes/storage/mongodb/data/db/:/data/db:rw
+      - /home/deploy/volumes/storage/mongodb/data/configdb/:/data/configdb:rw
+    networks:
+      - deploy-network
+networks:
+  deploy-network:
